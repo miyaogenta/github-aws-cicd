@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sample
+
+  Sample SAM Template for sample
+
+Globals:
+  Function:
+    Timeout: 3
+
+# 以下必要な記述
+
+Parameters:
+  StreamDataApcBucketName:
+    Description: "S3 stream-data-apc buket name"
+    Type: String
+    Default: stream-data-apc-test
+
+Resources:
+  StreamToDynamoDB:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 'stream-to-dynamodb'
+      CodeUri: stream-to-dynamodb/
+      Handler: stream_to_dynamodb.lambda_handler
+      Runtime: python3.8
+      Events:
+        BuketEvent1:
+          Type: S3
+          Properties:
+            Bucket: !Ref StreamDataApc
+            Events: s3:ObjectCreated:Put
+      Policies:
+          - AmazonS3FullAccess
+          - AmazonDynamoDBFullAccess
+          - AWSLambdaBasicExecutionRole
+
+  StreamToDynamoDBInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt StreamToDynamoDB.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Sub ${AWS::AccountId}
+      SourceArn: !GetAtt StreamDataApc.Arn
+
+  StreamDataApc:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref StreamDataApcBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Id: delete-a-day-public
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 1
+            
+          
+          
+
+
+

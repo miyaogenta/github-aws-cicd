@@ -1,7 +1,11 @@
 version: 0.2
 
 phases:
-  build:
+  install:
+    runtime-versions:
+      nodejs: 8
     commands:
-      - echo Entered the build phase...
-      - echo Build started on `date`
+      - npm install
+  pre_build:
+    commands:
+      - npm test
